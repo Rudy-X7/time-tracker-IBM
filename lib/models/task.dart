@@ -3,7 +3,11 @@ class Task {
   final String name;
   final String projectId;
 
-  Task({required this.id, required this.name, required this.projectId});
+  Task({
+    required this.id, 
+      required this.name, 
+        required this.projectId
+    });
 
   factory Task.fromJson(Map<String, dynamic> json) {
     return Task(
