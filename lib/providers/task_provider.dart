@@ -12,13 +12,35 @@ class TaskProvider extends ChangeNotifier {
   Future<void> loadTasks() async {
     try {
       final data = await _storage.getData(STORAGE_KEY);
-      if (data != null && data is List) {
-        _tasks =
-            data
-                .map((item) => Task.fromJson(item as Map<String, dynamic>))
-                .toList();
-        notifyListeners();
+      if (data != null && data is List && data.isNotEmpty) {
+        _tasks = data
+            .map((item) => Task.fromJson(item as Map<String, dynamic>))
+            .toList();
+      } else {
+        // Optional: preload initial tasks if storage is empty
+        _tasks = [
+          Task(
+            id: '1',
+            name: 'Design UI',
+            description: 'Create wireframes and mockups',
+            projectId: '1',
+          ),
+          Task(
+            id: '2',
+            name: 'Build Backend',
+            description: 'Set up database and APIs',
+            projectId: '1',
+          ),
+          Task(
+            id: '3',
+            name: 'Write Documentation',
+            description: 'Document APIs and architecture',
+            projectId: '2',
+          ),
+        ];
+        await _saveTasks(); // Save default tasks to storage
       }
+      notifyListeners();
     } catch (e) {
       print('Error loading tasks: $e');
     }
@@ -31,9 +53,9 @@ class TaskProvider extends ChangeNotifier {
   }
 
   Future<void> updateTask(Task updatedTask) async {
-    final taskIndex = _tasks.indexWhere((task) => task.id == updatedTask.id);
-    if (taskIndex >= 0) {
-      _tasks[taskIndex] = updatedTask;
+    final index = _tasks.indexWhere((task) => task.id == updatedTask.id);
+    if (index >= 0) {
+      _tasks[index] = updatedTask;
       await _saveTasks();
       notifyListeners();
     }
