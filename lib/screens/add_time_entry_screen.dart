@@ -29,6 +29,7 @@ class _AddTimeEntryScreenState extends State<AddTimeEntryScreen> {
     // Load projects on init
     Future.microtask(() {
       Provider.of<ProjectProvider>(context, listen: false).loadProjects();
+      Provider.of<TaskProvider>(context, listen: false).loadTasks();
     });
   }
 
