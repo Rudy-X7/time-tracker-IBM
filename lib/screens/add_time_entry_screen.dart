@@ -23,6 +23,14 @@ class _AddTimeEntryScreenState extends State<AddTimeEntryScreen> {
   final TextEditingController _notesController = TextEditingController();
   DateTime _selectedDate = DateTime.now();
   final _formKey = GlobalKey<FormState>();
+    @override
+  void initState() {
+    super.initState();
+    // Load projects on init
+    Future.microtask(() {
+      Provider.of<ProjectProvider>(context, listen: false).loadProjects();
+    });
+  }
 
   @override
   void dispose() {
