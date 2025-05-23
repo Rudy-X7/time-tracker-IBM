@@ -51,6 +51,9 @@ class _AddTimeEntryScreenState extends State<AddTimeEntryScreen> {
     final projectProvider = Provider.of<ProjectProvider>(context);
     final taskProvider = Provider.of<TaskProvider>(context);
     final projects = projectProvider.projects;
+    final tasks = _selectedProjectId == null
+        ? <Task>[]
+        : taskProvider.getTasksByProjectId(_selectedProjectId!);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Add Time Entry')),
@@ -66,67 +69,47 @@ class _AddTimeEntryScreenState extends State<AddTimeEntryScreen> {
                 border: OutlineInputBorder(),
               ),
               value: _selectedProjectId,
-              hint: const Text('Select a project'),
-              items:
-                  projects.map((project) {
-                    return DropdownMenuItem<String>(
-                      value: project.id,
-                      child: Text(project.name),
-                    );
-                  }).toList(),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please select a project';
-                }
-                return null;
-              },
+              items: projects.map((project) {
+                return DropdownMenuItem<String>(
+                  value: project.id,
+                  child: Text(project.name),
+                );
+              }).toList(),
               onChanged: (value) {
                 setState(() {
                   _selectedProjectId = value;
-                  _selectedTaskId = null; // Reset task when project changes
+                  _selectedTaskId = null;
                 });
               },
+              validator: (value) => value == null ? 'Please select a project' : null,
             ),
             const SizedBox(height: 16),
 
-            // Task Dropdown (only enabled if project is selected)
+            // Task Dropdown
             DropdownButtonFormField<String>(
               decoration: const InputDecoration(
                 labelText: 'Task',
                 border: OutlineInputBorder(),
               ),
               value: _selectedTaskId,
-              hint: const Text('Select a task'),
-              items:
-                  _selectedProjectId == null
-                      ? []
-                      : taskProvider
-                          .getTasksByProjectId(_selectedProjectId!)
-                          .map((task) {
-                            return DropdownMenuItem<String>(
-                              value: task.id,
-                              child: Text(task.name),
-                            );
-                          })
-                          .toList(),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please select a task';
-                }
-                return null;
-              },
-              onChanged:
-                  _selectedProjectId == null
-                      ? null
-                      : (value) {
-                        setState(() {
-                          _selectedTaskId = value;
-                        });
-                      },
+              items: tasks.map((task) {
+                return DropdownMenuItem<String>(
+                  value: task.id,
+                  child: Text(task.name),
+                );
+              }).toList(),
+              onChanged: _selectedProjectId == null
+                  ? null
+                  : (value) {
+                      setState(() {
+                        _selectedTaskId = value;
+                      });
+                    },
+              validator: (value) => value == null ? 'Please select a task' : null,
             ),
             const SizedBox(height: 16),
 
-            // Duration inputs (Hours and Minutes)
+            // Duration Inputs
             Row(
               children: [
                 Expanded(
@@ -142,8 +125,7 @@ class _AddTimeEntryScreenState extends State<AddTimeEntryScreen> {
                         if (_minutesController.text.isEmpty) {
                           return 'Enter hours or minutes';
                         }
-                      } else if (int.tryParse(value) == null ||
-                          int.parse(value) < 0) {
+                      } else if (int.tryParse(value) == null || int.parse(value) < 0) {
                         return 'Enter a valid number';
                       }
                       return null;
@@ -197,7 +179,7 @@ class _AddTimeEntryScreenState extends State<AddTimeEntryScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Notes (Optional)
+            // Notes Field
             TextFormField(
               controller: _notesController,
               decoration: const InputDecoration(
@@ -227,7 +209,6 @@ class _AddTimeEntryScreenState extends State<AddTimeEntryScreen> {
 
   void _saveTimeEntry() {
     if (_formKey.currentState!.validate()) {
-      // Calculate total minutes
       final hours = int.tryParse(_hoursController.text) ?? 0;
       final minutes = int.tryParse(_minutesController.text) ?? 0;
       final totalMinutes = (hours * 60) + minutes;
@@ -239,7 +220,6 @@ class _AddTimeEntryScreenState extends State<AddTimeEntryScreen> {
         return;
       }
 
-      // Create a time entry
       final timeEntry = TimeEntry(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         projectId: _selectedProjectId!,
@@ -249,14 +229,8 @@ class _AddTimeEntryScreenState extends State<AddTimeEntryScreen> {
         notes: _notesController.text.isEmpty ? null : _notesController.text,
       );
 
-      // Save the time entry
-      final timeEntryProvider = Provider.of<TimeEntryProvider>(
-        context,
-        listen: false,
-      );
-      timeEntryProvider.addEntry(timeEntry);
+      Provider.of<TimeEntryProvider>(context, listen: false).addEntry(timeEntry);
 
-      // Show success message and return to previous screen
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Time entry added successfully')),
       );
@@ -264,3 +238,4 @@ class _AddTimeEntryScreenState extends State<AddTimeEntryScreen> {
     }
   }
 }
+
